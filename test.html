@@ -1,0 +1,207 @@
+<!--
+<!DOCTYPE HTML> 
+<html> 
+<head> 
+<title>Your Address:</title> 
+<script type="text/javascript"> 
+navigator.geolocation.getCurrentPosition(function(position) {
+   lat = position.coords.latitude;
+   lang = position.coords.longitude;
+   window.location.href = "http://web.engr.oregonstate.edu/~hesseljo/playground/fetch.php?lat=" + lat + "&long=" + lang;
+});
+  </script> 
+</head> 
+<body onload="getCurrentPosition()"></body> 
+</html>
+-->
+
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+        <script>
+    
+      /*
+        Print the results from the Google Geocoding API
+      */
+            function printAddressComponent(addressComponents)
+      {
+        if(addressComponents.neighborhood != '' && addressComponents.neighborhood != null)
+        {
+          $('.neighborhood').html('<u>Neighborhood:</u> ' + addressComponents.neighborhood + '<br />');
+        }
+        
+        if(addressComponents.streetNumber != '' && addressComponents.streetNumber != null)
+        {
+          $('.streetNumber').html('<u>Street Number:</u> ' + addressComponents.streetNumber + '<br />');
+        }
+        
+        if(addressComponents.streetAddress != '' && addressComponents.streetAddress != null)
+        {
+          $('.streetAddress').html('<u>Street Address:</u> ' + addressComponents.streetAddress + '<br />');
+        }
+        
+        if(addressComponents.country != '' && addressComponents.country != null)
+        {
+          $('.country').html('<u>Country:</u> ' + addressComponents.country + '<br />');
+        }
+        
+        if(addressComponents.city != '' && addressComponents.city != null)
+        {
+          $('.city').html('<u>City:</u> ' + addressComponents.city + '<br />');
+        }
+        
+        if(addressComponents.postalCode != '' && addressComponents.postalCode != null)
+        {
+          $('.postalCode').html('<u>Postal Code:</u> ' + addressComponents.postalCode + '<br />');
+        }
+        if(addressComponents.latitude != '' && addressComponents.latitude != null)
+        {
+          $('.latitude').html('<u>Latitude:</u> ' + addressComponents.latitude + '<br />');
+        }
+        if(addressComponents.longitude != '' && addressComponents.longitude != null)
+        {
+          $('.longitude').html('<u>Longitude:</u> ' + addressComponents.longitude + '<br />');
+        }
+        if(addressComponents.formattedAddress != '' && addressComponents.formattedAddress != null)
+        {
+          $('.formattedAddress').html('<u>Formatted Address:</u> ' + addressComponents.formattedAddress + '<br />');
+        } 
+      }
+      
+      /*
+        Clear the input form.
+      */
+      function clearForm()
+      {
+        $('#streetAddressInput').val('');
+        $('#countryInput').val('');
+        $('#cityInput').val('');
+        $('#provinceInput').val('');
+      }
+      
+      /*
+        Clear the results.
+      */
+      function clearResults()
+      {
+        $('.neighborhood').html('');
+        $('.streetNumber').html('');
+        $('.streetAddress').html('');
+        $('.country').html('');
+        $('.city').html('');
+        $('.postalCode').html('');
+        $('.latitude').html('');
+        $('.longitude').html('');
+        $('.formattedAddress').html('');
+        $('.error').html('');
+      }
+      
+      /*
+        Read the input form and call the Google Geocoding API.
+      */
+      function geocode()
+      {
+        var input = String($('#streetAddressInput').val()) + ' ' + String($('#countryInput').val()) + ' ' + String($('#cityInput').val()) + ' ' + String($('#provinceInput').val());
+        input = encodeURIComponent(input);
+        
+        $.getJSON('http://maps.googleapis.com/maps/api/geocode/json?address=' + input + '&sensor=false',function(response){ 
+          if(response.status == 'OK')
+          {
+            // Clear error output
+            $('.error').html('');
+            
+            // Parse response
+            var addressComponents = new Object();
+            addressComponents.formattedAddress = response.results[0].formatted_address;
+            addressComponents.latitude = response.results[0].geometry.location.lat;
+            addressComponents.longitude = response.results[0].geometry.location.lng;
+            
+            // Parse the address component
+            $.each(response.results[0].address_components, function (i, addressComponent) {
+              if (addressComponent.types[0] == 'route'){
+                addressComponents.streetAddress = addressComponent.long_name;
+              }
+              else if (addressComponent.types[0] == 'locality'){
+                addressComponents.city = addressComponent.long_name;
+              }
+              else if (addressComponent.types[0] == 'country'){ 
+                addressComponents.country = addressComponent.long_name;
+              }
+              else if (addressComponent.types[0] == 'postal_code'){  
+                addressComponents.postalCode = addressComponent.long_name;
+              }
+              else if (addressComponent.types[0] == 'street_number'){  
+                addressComponents.streetNumber = addressComponent.long_name;
+              }
+              else if(addressComponent.types[0] == 'neighborhood')
+              {
+                addressComponents.neighborhood = addressComponent.long_name;
+              }
+              //return false; // break the loop
+            });
+            
+            printAddressComponent(addressComponents);
+          }
+          else if(response.status == 'ZERO_RESULTS')
+          {
+            clearResults();
+            $('.error').html('<strong>No Results</strong>');
+          }
+          else
+          {
+            clearResults();
+            $('.error').html('<strong>Unknown Error</strong>');
+          }
+        });
+      }
+      
+      $(document).ready(function(){
+        // If you press enter while inside the form, submit it.
+        $("#streetAddressInput").keyup(function(event){
+          if(event.keyCode == 13){
+            geocode();
+          }
+        });
+        $("#cityInput").keyup(function(event){
+          if(event.keyCode == 13){
+            geocode();
+          }
+        });
+        $("#provinceInput").keyup(function(event){
+          if(event.keyCode == 13){
+            geocode();
+          }
+        });
+        $("#countryInput").keyup(function(event){
+          if(event.keyCode == 13){
+            geocode();
+          }
+        }); 
+      });
+        </script>
+    </head>
+    <body>
+    <label for="streetAddressInput">Street Address:</label>
+    <input type="text" id="streetAddressInput" value=""><br />
+    <label for="cityInput">City:</label>
+    <input type="text" id="cityInput" value=""><br />
+    <label for="provinceInput">Province:</label>
+    <input type="text" id="provinceInput" value=""><br />
+    <label for="countryInput">Country:</label>
+    <input type="text" id="countryInput" value=""><br />    
+    <input type="submit" value="Clear" onclick="clearForm();"><input type="submit" value="Submit" onclick="geocode();"><br />
+    <br />
+        <div class="neighborhood"></div>
+    <div class="streetNumber"></div>
+    <div class="country"></div>
+    <div class="city"></div>
+    <div class="postalCode"></div>
+    <div class="streetAddress"></div>
+    <div class="latitude"></div>
+    <div class="longitude"></div>
+    <div class="formattedAddress"></div>
+    <div class="error"></div>
+    </body>
+</html>
